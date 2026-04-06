@@ -96,6 +96,46 @@ if st.sidebar.button("🚀 Run Simulation"):
     })
 
     # ----------------------------
+    # METRIC GRAPHS
+    # ----------------------------
+    st.subheader("📈 Energy, Fatigue, and Time Graphs")
+
+    algorithms = ["MPDD", "MILP", "NSGA"]
+    energy_values = [E1, E2, E3]
+    fatigue_values = [F1, F2, F3]
+    time_values = [T1, T2, T3]
+
+    def plot_metric(metric_values, metric_title, color):
+        fig, ax = plt.subplots(figsize=(6, 4))
+        bars = ax.bar(algorithms, metric_values, color=color)
+        ax.set_title(metric_title)
+        ax.set_ylabel("Value")
+        ax.grid(axis="y", alpha=0.3)
+
+        # Add values above bars
+        for bar in bars:
+            value = bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                value + (0.02 * max(metric_values) if max(metric_values) > 0 else 0.01),
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+            )
+
+        return fig
+
+    g1, g2, g3 = st.columns(3)
+
+    with g1:
+        st.pyplot(plot_metric(energy_values, "Energy", "#1f77b4"))
+    with g2:
+        st.pyplot(plot_metric(fatigue_values, "Fatigue", "#ff7f0e"))
+    with g3:
+        st.pyplot(plot_metric(time_values, "Time", "#2ca02c"))
+
+    # ----------------------------
     # PLOTTING FUNCTION
     # ----------------------------
     def plot_route(route, title):
