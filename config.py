@@ -1,0 +1,3 @@
+# config.py
+
+BATTERY_CAPACITY = 20000

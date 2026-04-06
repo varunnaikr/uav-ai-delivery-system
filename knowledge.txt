@@ -1,0 +1,10 @@
+Low battery means energy efficiency is critical.
+Emergency deliveries must minimize time.
+Heavy payload increases fatigue and energy consumption.
+Windy weather reduces UAV speed.
+Short routes are preferred when battery is low.
+Balanced optimization is best for normal conditions.
+Pareto optimization is useful for multi-objective trade-offs.
+MILP is best for shortest path problems.
+MPDD balances energy, fatigue, and time.
+NSGA-II is best when multiple objectives conflict.
