@@ -28,6 +28,10 @@ num_routes = st.sidebar.slider("Number of Routes", 500, 5000, 2000)
 
 load_level = sum(weights.values())
 
+# Keep latest simulation results across Streamlit reruns (e.g., dropdown changes)
+if "simulation_results" not in st.session_state:
+    st.session_state.simulation_results = None
+
 # ----------------------------
 # BUTTON
 # ----------------------------
@@ -70,6 +74,36 @@ if st.sidebar.button("🚀 Run Simulation"):
         decision = "MILP"
     else:
         decision = decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals)
+
+    # Save results so UI interactions do not reset the app to the initial state
+    st.session_state.simulation_results = {
+        "retrieved": retrieved,
+        "decision": decision,
+        "mpdd_route": mpdd_route,
+        "milp_route": milp_route,
+        "nsga_route": nsga_route,
+        "metrics": {
+            "mpdd": mpdd_vals,
+            "milp": milp_vals,
+            "nsga": nsga_vals,
+        },
+    }
+
+# Render latest results (if present) even after Streamlit reruns
+if st.session_state.simulation_results:
+    results = st.session_state.simulation_results
+    retrieved = results["retrieved"]
+    decision = results["decision"]
+    mpdd_route = results["mpdd_route"]
+    milp_route = results["milp_route"]
+    nsga_route = results["nsga_route"]
+    mpdd_vals = results["metrics"]["mpdd"]
+    milp_vals = results["metrics"]["milp"]
+    nsga_vals = results["metrics"]["nsga"]
+
+    E1, F1, T1 = mpdd_vals
+    E2, F2, T2 = milp_vals
+    E3, F3, T3 = nsga_vals
 
     # ----------------------------
     # DISPLAY SECTIONS
@@ -191,6 +225,7 @@ if st.sidebar.button("🚀 Run Simulation"):
     algo_choice = st.selectbox(
         "Select Algorithm to Simulate",
         ["MPDD", "MILP", "NSGA"],
+        key="simulation_algo_choice",
     )
 
     if algo_choice == "MPDD":
