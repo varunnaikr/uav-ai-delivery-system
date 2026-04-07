@@ -74,6 +74,8 @@ if st.sidebar.button("🚀 Run Simulation"):
         mpdd_vals,
         milp_vals,
         nsga_vals,
+        battery_level=battery_level,
+        num_routes=num_routes,
         is_emergency=is_emergency,
     )
 
