@@ -76,12 +76,33 @@ if st.sidebar.button("🚀 Run Simulation"):
         decision = decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals)
 
     # Save results so UI interactions do not reset the app to the initial state
+    simulation_by_algo = {}
+    for algo_name, route in {
+        "MPDD": mpdd_route,
+        "MILP": milp_route,
+        "NSGA": nsga_route,
+    }.items():
+        if route is None:
+            simulation_by_algo[algo_name] = {
+                "route": None,
+                "steps": [],
+                "totals": (0.0, 0.0, 0.0),
+            }
+        else:
+            steps, total_E, total_F, total_T = simulate_route(route)
+            simulation_by_algo[algo_name] = {
+                "route": route,
+                "steps": steps,
+                "totals": (total_E, total_F, total_T),
+            }
+
     st.session_state.simulation_results = {
         "retrieved": retrieved,
         "decision": decision,
         "mpdd_route": mpdd_route,
         "milp_route": milp_route,
         "nsga_route": nsga_route,
+        "simulation_by_algo": simulation_by_algo,
         "metrics": {
             "mpdd": mpdd_vals,
             "milp": milp_vals,
@@ -227,15 +248,29 @@ if st.session_state.simulation_results:
         ["MPDD", "MILP", "NSGA"],
         key="simulation_algo_choice",
     )
+    simulation_by_algo = results.get("simulation_by_algo", {})
+    selected_simulation = simulation_by_algo.get(algo_choice, {})
+    sim_route = selected_simulation.get("route")
+    steps = selected_simulation.get("steps", [])
+    total_E, total_F, total_T = selected_simulation.get("totals", (0.0, 0.0, 0.0))
 
-    if algo_choice == "MPDD":
-        sim_route = mpdd_route
-    elif algo_choice == "MILP":
-        sim_route = milp_route
+    # Backward compatibility if session state was created before simulation_by_algo existed
+    if not selected_simulation:
+        if algo_choice == "MPDD":
+            sim_route = mpdd_route
+        elif algo_choice == "MILP":
+            sim_route = milp_route
+        else:
+            sim_route = nsga_route
+
+        if sim_route:
+            steps, total_E, total_F, total_T = simulate_route(sim_route)
+
+    st.caption(f"Showing analysis for: **{algo_choice}**")
+    if sim_route:
+        st.code(" -> ".join(sim_route), language="text")
     else:
-        sim_route = nsga_route
-
-    steps, total_E, total_F, total_T = simulate_route(sim_route)
+        st.warning(f"No feasible route was generated for {algo_choice}.")
 
     st.write("### 📦 Step-by-Step Movement")
 
