@@ -70,10 +70,12 @@ if st.sidebar.button("🚀 Run Simulation"):
     E2, F2, T2 = milp_vals
     E3, F3, T3 = nsga_vals
 
-    if is_emergency:
-        decision = "MILP"
-    else:
-        decision = decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals)
+    decision = decide_best_algorithm(
+        mpdd_vals,
+        milp_vals,
+        nsga_vals,
+        is_emergency=is_emergency,
+    )
 
     # Save results so UI interactions do not reset the app to the initial state
     simulation_by_algo = {}
@@ -298,8 +300,10 @@ if st.session_state.simulation_results:
 
     st.write(
         f"""
-        - Agent selected **{decision}** using route performance (E + F + T)  
-        - MILP minimizes distance (fastest route)  
+        - Agent selected **{decision}** using route performance  
+        - In emergency mode, selection prioritizes minimum time  
+        - In normal mode, selection minimizes E + F + T  
+        - MILP minimizes distance, but is not always the fastest by time  
         - NSGA balances trade-offs  
         - MPDD provides weighted optimization  
         """
