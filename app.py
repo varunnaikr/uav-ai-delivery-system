@@ -2,6 +2,7 @@
 
 import streamlit as st
 import matplotlib.pyplot as plt
+import time
 
 from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate
 from agent import decide_best_algorithm
@@ -25,6 +26,7 @@ st.sidebar.header("⚙️ Input Parameters")
 battery_level = st.sidebar.slider("Battery Level (%)", 0, 100, 50)
 is_emergency = st.sidebar.checkbox("🚨 Emergency Delivery")
 num_routes = st.sidebar.slider("Number of Routes", 500, 5000, 2000)
+speed = st.sidebar.slider("Animation Speed", 0.1, 1.0, 0.5)
 
 load_level = sum(weights.values())
 
@@ -142,21 +144,42 @@ if st.sidebar.button("🚀 Run Simulation"):
     # ----------------------------
     # PLOTTING FUNCTION
     # ----------------------------
-    def plot_route(route, title):
+    def animate_route(route, title):
+        if route is None:
+            st.write("No valid route")
+            return
+
         fig, ax = plt.subplots()
 
         x = [points[p][0] for p in route]
         y = [points[p][1] for p in route]
 
-        ax.plot(x, y, marker='o')
-
+        # Plot all points
         for name, (px, py) in points.items():
             ax.text(px, py, name, fontsize=8)
 
         ax.set_title(title)
         ax.grid()
 
-        return fig
+        # Placeholder for animation
+        plot_placeholder = st.empty()
+
+        # Animate step-by-step
+        for i in range(1, len(route) + 1):
+            ax.clear()
+
+            # redraw points
+            for name, (px, py) in points.items():
+                ax.text(px, py, name, fontsize=8)
+
+            # draw partial route
+            ax.plot(x[:i], y[:i], marker='o')
+
+            ax.set_title(title)
+            ax.grid()
+
+            plot_placeholder.pyplot(fig)
+            time.sleep(speed)
 
     # ----------------------------
     # ROUTE VISUALIZATION
@@ -167,15 +190,15 @@ if st.sidebar.button("🚀 Run Simulation"):
 
     with c1:
         st.write("MPDD")
-        st.pyplot(plot_route(mpdd_route, "MPDD"))
+        animate_route(mpdd_route, "MPDD Route Animation")
 
     with c2:
         st.write("MILP")
-        st.pyplot(plot_route(milp_route, "MILP"))
+        animate_route(milp_route, "MILP Route Animation")
 
     with c3:
         st.write("NSGA-II")
-        st.pyplot(plot_route(nsga_route, "NSGA"))
+        animate_route(nsga_route, "NSGA Route Animation")
 
     # ----------------------------
     # FINAL INSIGHT
