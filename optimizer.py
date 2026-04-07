@@ -140,3 +140,43 @@ def pareto(routes):
             pareto_front.append(feasible[i])
 
     return pareto_front
+
+
+def simulate_route(route):
+    steps = []
+
+    load = sum(weights.values())
+    total_E = total_F = total_T = 0
+    current_energy = 0
+
+    for i in range(len(route) - 1):
+        start = route[i]
+        end = route[i + 1]
+
+        d = dist(start, end)
+
+        segment_energy = d * (10 + 2 * load)
+        total_E += segment_energy
+        current_energy += segment_energy
+
+        fatigue = (load ** 2) * d
+        total_F += fatigue
+
+        speed = 10 / (1 + 0.1 * load)
+        time = d / speed
+        total_T += time
+
+        steps.append({
+            "from": start,
+            "to": end,
+            "distance": round(d, 2),
+            "load": round(load, 2),
+            "energy": round(segment_energy, 2),
+            "fatigue": round(fatigue, 2),
+            "time": round(time, 2),
+        })
+
+        if end in weights:
+            load -= weights[end]
+
+    return steps, total_E, total_F, total_T
