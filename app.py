@@ -4,7 +4,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate
-from agent import decide_algorithm_with_rag
+from agent import decide_best_algorithm
 from rag import load_knowledge, build_index, retrieve
 from data import weights, points
 
@@ -43,11 +43,6 @@ if st.sidebar.button("🚀 Run Simulation"):
     retrieved = retrieve(query, docs, index)
 
     # ----------------------------
-    # AGENT DECISION
-    # ----------------------------
-    decision = decide_algorithm_with_rag(retrieved)
-
-    # ----------------------------
     # GENERATE ROUTES
     # ----------------------------
     routes = generate_routes(num_routes)
@@ -61,11 +56,20 @@ if st.sidebar.button("🚀 Run Simulation"):
     nsga_route = pareto_routes[0][0] if pareto_routes else None
 
     # ----------------------------
-    # METRICS
+    # METRICS + PERFORMANCE-BASED DECISION
     # ----------------------------
-    E1, F1, T1 = evaluate(mpdd_route)
-    E2, F2, T2 = evaluate(milp_route)
-    E3, F3, T3 = evaluate(nsga_route)
+    mpdd_vals = evaluate(mpdd_route)
+    milp_vals = evaluate(milp_route)
+    nsga_vals = evaluate(nsga_route)
+
+    E1, F1, T1 = mpdd_vals
+    E2, F2, T2 = milp_vals
+    E3, F3, T3 = nsga_vals
+
+    if is_emergency:
+        decision = "MILP"
+    else:
+        decision = decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals)
 
     # ----------------------------
     # DISPLAY SECTIONS
@@ -180,7 +184,7 @@ if st.sidebar.button("🚀 Run Simulation"):
 
     st.write(
         f"""
-        - Agent selected **{decision}** based on retrieved knowledge  
+        - Agent selected **{decision}** using route performance (E + F + T)  
         - MILP minimizes distance (fastest route)  
         - NSGA balances trade-offs  
         - MPDD provides weighted optimization  

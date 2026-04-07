@@ -1,29 +1,19 @@
 # agent.py
 
-def decide_algorithm_with_rag(retrieved_knowledge):
-    text = " ".join(retrieved_knowledge).lower()
 
-    score = {
-        "MPDD": 0,
-        "MILP": 0,
-        "NSGA": 0
+def decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals):
+    """
+    Decide the best algorithm based on actual route performance.
+    Lower combined objective (energy + fatigue + time) is better.
+    """
+    e1, f1, t1 = mpdd_vals
+    e2, f2, t2 = milp_vals
+    e3, f3, t3 = nsga_vals
+
+    scores = {
+        "MPDD": e1 + f1 + t1,
+        "MILP": e2 + f2 + t2,
+        "NSGA": e3 + f3 + t3,
     }
 
-    if "emergency" in text or "minimize time" in text:
-        score["MILP"] += 2
-        score["NSGA"] += 1
-
-    if "low battery" in text or "energy" in text:
-        score["NSGA"] += 2
-
-    if "trade" in text or "multi" in text:
-        score["NSGA"] += 2
-        score["MPDD"] += 1
-
-    if "heavy" in text:
-        score["NSGA"] += 1
-        score["MPDD"] += 1
-
-    score["MPDD"] += 1
-
-    return max(score, key=score.get)
+    return min(scores, key=scores.get)
