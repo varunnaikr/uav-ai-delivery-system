@@ -3,7 +3,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate
+from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate, simulate_route
 from agent import decide_best_algorithm
 from rag import load_knowledge, build_index, retrieve
 from data import weights, points
@@ -176,6 +176,44 @@ if st.sidebar.button("🚀 Run Simulation"):
     with c3:
         st.write("NSGA-II")
         st.pyplot(plot_route(nsga_route, "NSGA"))
+
+    # ----------------------------
+    # STEP-BY-STEP ROUTE SIMULATION
+    # ----------------------------
+    st.subheader("🔍 Route Simulation (Step-by-Step)")
+
+    algo_choice = st.selectbox(
+        "Select Algorithm to Simulate",
+        ["MPDD", "MILP", "NSGA"],
+    )
+
+    if algo_choice == "MPDD":
+        sim_route = mpdd_route
+    elif algo_choice == "MILP":
+        sim_route = milp_route
+    else:
+        sim_route = nsga_route
+
+    steps, total_E, total_F, total_T = simulate_route(sim_route)
+
+    st.write("### 📦 Step-by-Step Movement")
+
+    for i, step in enumerate(steps):
+        st.write(
+            f"""
+            **Step {i + 1}: {step['from']} → {step['to']}**
+            - Distance: {step['distance']}
+            - Load: {step['load']}
+            - Energy Used: {step['energy']}
+            - Fatigue: {step['fatigue']}
+            - Time: {step['time']}
+            """
+        )
+
+    st.subheader("📊 Final Totals")
+    st.write(f"Energy: {round(total_E, 2)}")
+    st.write(f"Fatigue: {round(total_F, 2)}")
+    st.write(f"Time: {round(total_T, 2)}")
 
     # ----------------------------
     # FINAL INSIGHT
