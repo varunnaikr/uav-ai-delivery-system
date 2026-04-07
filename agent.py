@@ -10,23 +10,38 @@ def decide_best_algorithm(
     is_emergency=False,
 ):
     """
-    Decide the best algorithm from route metrics and mission context.
+    Decide algorithm strategy from mission context.
 
-    Rules:
-    - Emergency: prioritize minimum delivery time.
-    - High battery + non-emergency + large route space: prefer NSGA-II.
-    - Otherwise: minimize combined objective (energy + fatigue + time).
+    Decision table:
+    - High battery + no emergency + low routes  -> MPDD
+    - High battery + no emergency + high routes -> NSGA-II
+    - High battery + emergency + low routes     -> MILP
+    - High battery + emergency + high routes    -> MILP + NSGA-II
+    - Low battery + no emergency + low routes   -> MILP
+    - Low battery + no emergency + high routes  -> Constrained NSGA-II
+    - Low battery + emergency + low routes      -> MILP
+    - Low battery + emergency + high routes     -> MILP
     """
-    metrics = {
-        "MPDD": mpdd_vals,
-        "MILP": milp_vals,
-        "NSGA": nsga_vals,
-    }
+    is_high_battery = battery_level >= 70
+    is_high_routes = num_routes >= 3000
 
-    if is_emergency:
-        return min(metrics, key=lambda name: metrics[name][2])
+    if is_high_battery and not is_emergency and not is_high_routes:
+        return "MPDD"
 
-    if battery_level >= 70 and num_routes >= 3000:
-        return "NSGA"
+    if is_high_battery and not is_emergency and is_high_routes:
+        return "NSGA-II"
 
-    return min(metrics, key=lambda name: sum(metrics[name]))
+    if is_high_battery and is_emergency and not is_high_routes:
+        return "MILP"
+
+    if is_high_battery and is_emergency and is_high_routes:
+        return "MILP + NSGA-II"
+
+    if not is_high_battery and not is_emergency and not is_high_routes:
+        return "MILP"
+
+    if not is_high_battery and not is_emergency and is_high_routes:
+        return "Constrained NSGA-II"
+
+    # Low battery + emergency (both route-space levels): reliability first.
+    return "MILP"
