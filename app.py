@@ -4,7 +4,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate, simulate_route
-from agent import decide_best_algorithm
+from agent import decide_best_algorithm, calculate_algorithm_scores
 from rag import load_knowledge, build_index, retrieve
 from data import weights, points
 
@@ -79,6 +79,15 @@ if st.sidebar.button("🚀 Run Simulation"):
         is_emergency=is_emergency,
     )
 
+    performance_scores, objective_weights = calculate_algorithm_scores(
+        mpdd_vals,
+        milp_vals,
+        nsga_vals,
+        battery_level=battery_level,
+        num_routes=num_routes,
+        is_emergency=is_emergency,
+    )
+
     # Save results so UI interactions do not reset the app to the initial state
     simulation_by_algo = {}
     for algo_name, route in {
@@ -103,6 +112,8 @@ if st.sidebar.button("🚀 Run Simulation"):
     st.session_state.simulation_results = {
         "retrieved": retrieved,
         "decision": decision,
+        "performance_scores": performance_scores,
+        "objective_weights": objective_weights,
         "mpdd_route": mpdd_route,
         "milp_route": milp_route,
         "nsga_route": nsga_route,
@@ -119,6 +130,8 @@ if st.session_state.simulation_results:
     results = st.session_state.simulation_results
     retrieved = results["retrieved"]
     decision = results["decision"]
+    performance_scores = results["performance_scores"]
+    objective_weights = results["objective_weights"]
     mpdd_route = results["mpdd_route"]
     milp_route = results["milp_route"]
     nsga_route = results["nsga_route"]
@@ -144,7 +157,19 @@ if st.session_state.simulation_results:
     # 🧠 AGENT
     with col2:
         st.subheader("🧠 Agent Decision")
-        st.info(f"Selected Algorithm: **{decision}**")
+        st.info(f"Selected Algorithm (from performance calculation): **{decision}**")
+        st.caption(
+            f"Weights → Energy: {objective_weights['energy']}, Fatigue: {objective_weights['fatigue']}, Time: {objective_weights['time']}"
+        )
+        st.write("Performance Score (lower is better):")
+        st.table({
+            "Algorithm": ["MPDD", "MILP", "NSGA"],
+            "Score": [
+                round(performance_scores["MPDD"], 4),
+                round(performance_scores["MILP"], 4),
+                round(performance_scores["NSGA"], 4),
+            ],
+        })
 
     # ----------------------------
     # METRICS TABLE
@@ -247,9 +272,12 @@ if st.session_state.simulation_results:
     # ----------------------------
     st.subheader("🔍 Route Simulation (Step-by-Step)")
 
+    algo_options = ["MPDD", "MILP", "NSGA"]
+    default_index = algo_options.index(decision) if decision in algo_options else 0
     algo_choice = st.selectbox(
         "Select Algorithm to Simulate",
-        ["MPDD", "MILP", "NSGA"],
+        algo_options,
+        index=default_index,
         key="simulation_algo_choice",
     )
     simulation_by_algo = results.get("simulation_by_algo", {})
@@ -310,3 +338,30 @@ if st.session_state.simulation_results:
         - MPDD provides weighted optimization  
         """
     )
+
+
+    # ----------------------------
+    # DECISION CHART BY SCENARIO
+    # ----------------------------
+    st.subheader("🧭 Decision Chart: Battery, Emergency, and Path Space")
+
+    scenario_rows = []
+    for b_label, b_value in [("Low", 30), ("High", 85)]:
+        for e_label, e_value in [("No", False), ("Yes", True)]:
+            for p_label, p_value in [("Low", 1500), ("High", 4000)]:
+                scenario_decision = decide_best_algorithm(
+                    mpdd_vals,
+                    milp_vals,
+                    nsga_vals,
+                    battery_level=b_value,
+                    num_routes=p_value,
+                    is_emergency=e_value,
+                )
+                scenario_rows.append({
+                    "Battery": b_label,
+                    "Emergency": e_label,
+                    "Path Space": p_label,
+                    "Selected Algorithm": scenario_decision,
+                })
+
+    st.table(scenario_rows)
