@@ -2,7 +2,6 @@
 
 import streamlit as st
 import matplotlib.pyplot as plt
-import time
 
 from optimizer import generate_routes, mpdd_best, milp_best, pareto, evaluate, simulate_route
 from agent import decide_best_algorithm
@@ -26,7 +25,6 @@ st.sidebar.header("⚙️ Input Parameters")
 battery_level = st.sidebar.slider("Battery Level (%)", 0, 100, 50)
 is_emergency = st.sidebar.checkbox("🚨 Emergency Delivery")
 num_routes = st.sidebar.slider("Number of Routes", 500, 5000, 2000)
-speed = st.sidebar.slider("Animation Speed", 0.1, 1.0, 0.5)
 
 load_level = sum(weights.values())
 
@@ -144,7 +142,7 @@ if st.sidebar.button("🚀 Run Simulation"):
     # ----------------------------
     # PLOTTING FUNCTION
     # ----------------------------
-    def animate_route(route, title):
+    def plot_route(route, title):
         if route is None:
             st.write("No valid route")
             return
@@ -154,32 +152,17 @@ if st.sidebar.button("🚀 Run Simulation"):
         x = [points[p][0] for p in route]
         y = [points[p][1] for p in route]
 
-        # Plot all points
+        # Plot all points and labels
         for name, (px, py) in points.items():
+            ax.scatter(px, py, color="black", s=20)
             ax.text(px, py, name, fontsize=8)
 
+        # Draw full route once (no animation)
+        ax.plot(x, y, marker='o')
         ax.set_title(title)
         ax.grid()
 
-        # Placeholder for animation
-        plot_placeholder = st.empty()
-
-        # Animate step-by-step
-        for i in range(1, len(route) + 1):
-            ax.clear()
-
-            # redraw points
-            for name, (px, py) in points.items():
-                ax.text(px, py, name, fontsize=8)
-
-            # draw partial route
-            ax.plot(x[:i], y[:i], marker='o')
-
-            ax.set_title(title)
-            ax.grid()
-
-            plot_placeholder.pyplot(fig)
-            time.sleep(speed)
+        st.pyplot(fig)
 
     # ----------------------------
     # ROUTE VISUALIZATION
@@ -190,15 +173,15 @@ if st.sidebar.button("🚀 Run Simulation"):
 
     with c1:
         st.write("MPDD")
-        animate_route(mpdd_route, "MPDD Route Animation")
+        plot_route(mpdd_route, "MPDD Route")
 
     with c2:
         st.write("MILP")
-        animate_route(milp_route, "MILP Route Animation")
+        plot_route(milp_route, "MILP Route")
 
     with c3:
         st.write("NSGA-II")
-        animate_route(nsga_route, "NSGA Route Animation")
+        plot_route(nsga_route, "NSGA Route")
 
     # ----------------------------
     # STEP-BY-STEP ROUTE SIMULATION
