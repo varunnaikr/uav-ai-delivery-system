@@ -1,19 +1,20 @@
 # agent.py
 
 
-def decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals):
+def decide_best_algorithm(mpdd_vals, milp_vals, nsga_vals, is_emergency=False):
     """
-    Decide the best algorithm based on actual route performance.
-    Lower combined objective (energy + fatigue + time) is better.
-    """
-    e1, f1, t1 = mpdd_vals
-    e2, f2, t2 = milp_vals
-    e3, f3, t3 = nsga_vals
+    Decide the best algorithm from route metrics.
 
-    scores = {
-        "MPDD": e1 + f1 + t1,
-        "MILP": e2 + f2 + t2,
-        "NSGA": e3 + f3 + t3,
+    - Emergency: prioritize minimum delivery time.
+    - Non-emergency: minimize combined objective (energy + fatigue + time).
+    """
+    metrics = {
+        "MPDD": mpdd_vals,
+        "MILP": milp_vals,
+        "NSGA": nsga_vals,
     }
 
-    return min(scores, key=scores.get)
+    if is_emergency:
+        return min(metrics, key=lambda name: metrics[name][2])
+
+    return min(metrics, key=lambda name: sum(metrics[name]))
